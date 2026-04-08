@@ -1,0 +1,44 @@
+# --------------------
+# Python
+# --------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+
+# --------------------
+# Airflow
+# --------------------
+logs/
+airflow.db
+
+# --------------------
+# Datos 
+# --------------------
+data/
+*.db
+*.csv
+
+# --------------------
+# Notebooks checkpoints
+# --------------------
+.ipynb_checkpoints/
+
+# --------------------
+# Credenciales (CRITICO)
+# --------------------
+service_account.json
+oauth_client.json
+mycreds.txt
+.env
+
+# --------------------
+# Sistema
+# --------------------
+.DS_Store
+
+# --------------------
+# Otros
+# --------------------
+*.log
