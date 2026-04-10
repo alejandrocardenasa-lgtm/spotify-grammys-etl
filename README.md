@@ -45,41 +45,53 @@ spotify-grammys-etl/
 ├── requirements.txt
 └── .gitignore
 
-ETL Pipeline Steps
-1. Extract
+
+---
+
+## ETL Pipeline Steps
+
+---
+
+### 1. Extract
 
 The extraction phase reads data from two different sources:
 
-Spotify dataset: loaded from data/raw/spotify_dataset.csv
-Grammys dataset: first loaded from CSV into a local SQLite staging database, then extracted from that database
+Spotify dataset: loaded from data/raw/spotify_dataset.csv  
+Grammys dataset: first loaded from CSV into a local SQLite staging database, then extracted from that database  
 
 This design simulates a more realistic ETL scenario where data may come from heterogeneous sources instead of a single flat file.
 
-2. Clean
+---
+
+### 2. Clean
 
 In the cleaning phase:
 
-Duplicate records are removed
-Missing values are filled with default values such as unknown, no_award, no_nominee, and no_workers
-Text columns are stripped of extra spaces
+Duplicate records are removed  
+Missing values are filled with default values such as unknown, no_award, no_nominee, and no_workers  
+Text columns are stripped of extra spaces  
 
 This step ensures both datasets have consistent values before transformation and merge operations.
 
-3. Transform
+---
+
+### 3. Transform
 
 The transformation phase standardizes both datasets and prepares them for integration:
 
-Text fields are converted to lowercase and trimmed
-Spotify numeric columns are converted to numeric types and missing numeric values are filled with zero
-Grammy date columns are parsed and the award_year field is derived
-A common field called merge_artist is created in both datasets to support dataset integration
+Text fields are converted to lowercase and trimmed  
+Spotify numeric columns are converted to numeric types and missing numeric values are filled with zero  
+Grammy date columns are parsed and the award_year field is derived  
+A common field called merge_artist is created in both datasets to support dataset integration  
 
 Two transformed outputs are created:
 
-Track-level merged dataset: joins Spotify tracks with Grammy information by artist
-Artist-level dataset: aggregates Spotify metrics and Grammy statistics by artist for dashboarding
+Track-level merged dataset: joins Spotify tracks with Grammy information by artist  
+Artist-level dataset: aggregates Spotify metrics and Grammy statistics by artist for dashboarding  
 
-4. Dimensional Model
+---
+
+## 4. Dimensional Model
 
 The transformed data is organized using a star schema, designed to support analytical queries combining Spotify track metrics with Grammy award information.
 
