@@ -1,33 +1,32 @@
-from google.oauth2.service_account import Credentials
+import os
+
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-import google.auth.transport.requests
-import os
 
 
 def upload_csv_to_drive(file_path):
-    SERVICE_ACCOUNT_FILE = "/opt/airflow/service_account.json"
+    TOKEN_FILE = "/opt/airflow/token.json"
     FOLDER_ID = "1G6awUxvySbM7WKRvdL5X_VMYCkozmSAv"
     SCOPES = ["https://www.googleapis.com/auth/drive"]
 
-    #  Validar archivo
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"No se encontró el archivo: {file_path}")
 
-    print(f"📤 Subiendo archivo: {file_path}")
+    if not os.path.exists(TOKEN_FILE):
+        raise FileNotFoundError(f"No se encontró el token OAuth: {TOKEN_FILE}")
+
+    print(f"Subiendo archivo: {file_path}")
 
     try:
-        # Credenciales
-        creds = Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE,
-            scopes=SCOPES
-        )
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 
-        # FIX conexión (evita errores oauth / transporte)
-        request = google.auth.transport.requests.Request()
-        creds.refresh(request)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            with open(TOKEN_FILE, "w") as token:
+                token.write(creds.to_json())
 
-        # Cliente Drive (importante cache_discovery=False)
         service = build(
             "drive",
             "v3",
@@ -43,18 +42,19 @@ def upload_csv_to_drive(file_path):
         media = MediaFileUpload(
             file_path,
             mimetype="text/csv",
-            resumable=False  # mas estable en Docker
+            resumable=False
         )
 
-        # Subida con reintentos
         uploaded_file = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id, name",
-        supportsAllDrives=True
-).execute()
+            body=file_metadata,
+            media_body=media,
+            fields="id, name"
+        ).execute(num_retries=3)
 
-        print(f"Archivo subido correctamente: {uploaded_file['name']} (ID: {uploaded_file['id']})")
+        print(
+            f"Archivo subido correctamente: "
+            f"{uploaded_file['name']} (ID: {uploaded_file['id']})"
+        )
 
     except Exception as e:
         print(f"Error subiendo archivo a Drive: {str(e)}")

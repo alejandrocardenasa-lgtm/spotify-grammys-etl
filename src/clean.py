@@ -29,10 +29,10 @@ def clean_grammys_data(grammys_df):
 
     # Llenar nulos
     grammys_df["title"] = grammys_df["title"].fillna("Unknown")
-    grammys_df["category"] = grammys_df["category"].fillna("Unknown")
-    grammys_df["nominee"] = grammys_df["nominee"].fillna("Unknown")
+    grammys_df["category"] = grammys_df["category"].fillna("no_award")
+    grammys_df["nominee"] = grammys_df["nominee"].fillna("no_nominee")
     grammys_df["artist"] = grammys_df["artist"].fillna("Unknown")
-    grammys_df["workers"] = grammys_df["workers"].fillna("Unknown")
+    grammys_df["workers"] = grammys_df["workers"].fillna("no_workers")
     grammys_df["img"] = grammys_df["img"].fillna("No Image")
 
     # Limpiar espacios en columnas de texto

@@ -1,44 +1,23 @@
-# --------------------
-# Python
-# --------------------
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Virtual env
 .venv/
 
-# --------------------
-# Airflow
-# --------------------
+# Cache
+__pycache__/
+*.pyc
+
+# Logs
 logs/
-airflow.db
+*.log
 
-# --------------------
-# Datos 
-# --------------------
-data/
-*.db
-*.csv
-
-# --------------------
-# Notebooks checkpoints
-# --------------------
-.ipynb_checkpoints/
-
-# --------------------
-# Credenciales (CRITICO)
-# --------------------
-service_account.json
+# Secrets
+.env
+token.json
 oauth_client.json
 mycreds.txt
-.env
 
-# --------------------
-# Sistema
-# --------------------
+# Editor
 .DS_Store
+.vscode/
 
-# --------------------
-# Otros
-# --------------------
-*.log
+# Jupyter
+.ipynb_checkpoints/
