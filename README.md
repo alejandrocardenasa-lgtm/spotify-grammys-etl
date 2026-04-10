@@ -90,7 +90,7 @@ The transformed data is organized using a **star schema**, designed to support a
 ### Grain
 The grain of the fact table is defined as:
 
-> **One row represents a Spotify track associated with a Grammy record for the same artist, category, and year (when available).**
+> **One row represents a Spotify track associated with a Grammy record for the same artist, category, and year.**
 
 This means:
 - A track can appear multiple times if the artist has multiple Grammy nominations or categories.
