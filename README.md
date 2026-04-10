@@ -83,84 +83,126 @@ Two transformed outputs are created:
 Track-level merged dataset: joins Spotify tracks with Grammy information by artist  
 Artist-level dataset: aggregates Spotify metrics and Grammy statistics by artist for dashboarding  
 
-### 4. Dimensional Model
+## 4. Dimensional Model
 
-The transformed data is organized using a star schema, designed to support analytical queries combining Spotify track metrics with Grammy award information.
+The transformed data is organized using a **star schema**, designed to support analytical queries combining Spotify track metrics with Grammy award information.
 
-#### Grain
-
+### Grain
 The grain of the fact table is defined as:
 
-One row in the fact table represents a Spotify track associated with a Grammy record for the same artist, category, and year when available.
+> **One row represents a Spotify track associated with a Grammy record for the same artist, category, and year (when available).**
 
-#### Dimensions
+This means:
+- A track can appear multiple times if the artist has multiple Grammy nominations or categories.
+- If no Grammy record exists, the track is still included with default values.
+- This design enables analysis at the intersection of **music performance (Spotify)** and **award recognition (Grammys)**.
 
-1. dim_artist  
+---
+
+## Dimensions
+
+### 1. dim_artist
 Stores unique artist information.
 
-Fields:
-artist_id  
-artist_name  
+**Fields:**
+- `artist_id` (PK)
+- `artist_name`
 
-2. dim_track  
-Stores Spotify track information.
+---
 
-Fields:
-track_id  
-track_name  
-album_name  
-explicit  
+### 2. dim_track
+Stores Spotify track-level metadata.
 
-3. dim_genre  
-Stores music genre information.
+**Fields:**
+- `track_id` (PK)
+- `track_name`
+- `album_name`
+- `explicit`
 
-Fields:
-genre_id  
-track_genre  
+---
 
-4. dim_award  
-Stores Grammy award information.
+### 3. dim_genre
+Stores genre classification for tracks.
 
-Fields:
-award_id  
-category  
-nominee  
-workers  
-winner  
+**Fields:**
+- `genre_id` (PK)
+- `track_genre`
 
-5. dim_date  
-Stores time-related information associated with Grammy records.
+---
 
-Fields:
-date_id  
-award_year  
-published_at  
-updated_at  
+### 4. dim_award
+Stores Grammy award details.
 
-#### Fact Table
+**Fields:**
+- `award_id` (PK)
+- `category`
+- `nominee`
+- `workers`
+- `winner`
 
-6. fact_music_awards  
-Stores the analytical measures and foreign keys to the dimensions.
+This dimension allows analysis of:
+- nominations vs winners
+- award categories
+- relationships between Spotify metrics and Grammy outcomes
 
-Fields:
-fact_id  
-artist_id  
-track_id  
-genre_id  
-award_id  
-date_id  
-popularity  
-duration_ms  
-danceability  
-energy  
-loudness  
-speechiness  
-acousticness  
-instrumentalness  
-liveness  
-valence  
-tempo  
+---
 
+### 5. dim_date
+Stores time-related attributes of Grammy records.
+
+**Fields:**
+- `date_id` (PK)
+- `award_year`
+- `published_at`
+- `updated_at`
+
+This enables time-based analysis such as:
+- trends by year
+- evolution of awards over time
+
+---
+
+## Fact Table
+
+### 6. fact_music_awards
+Central fact table containing Spotify metrics and foreign keys to all dimensions.
+
+**Fields:**
+- `fact_id` (PK)
+- `artist_id` (FK)
+- `track_id` (FK)
+- `genre_id` (FK)
+- `award_id` (FK)
+- `date_id` (FK)
+
+**Measures (Spotify features):**
+- `popularity`
+- `duration_ms`
+- `danceability`
+- `energy`
+- `loudness`
+- `speechiness`
+- `acousticness`
+- `instrumentalness`
+- `liveness`
+- `valence`
+- `tempo`
+
+---
+
+## Design Rationale
+
+- A **star schema** was chosen to simplify analytical queries and improve performance.
+- Dimensions separate descriptive attributes from measurable metrics.
+- The fact table centralizes Spotify numerical features for analysis.
+- Grammy data is integrated through `dim_award` and `dim_date`, enabling cross-domain insights.
+- Surrogate keys (`*_id`) ensure consistency and efficient joins.
+
+This model supports queries such as:
+- Which genres have higher Grammy-winning tracks?
+- Do more popular songs tend to win awards?
+- How do audio features differ between winners and non-winners?
+- Trends of awards and music characteristics over time
 ### 5. Load
 
 The final load phase writes data into PostgreSQL:
