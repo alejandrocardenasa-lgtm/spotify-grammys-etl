@@ -44,7 +44,7 @@ spotify-grammys-etl/
 ├── docker-compose.yaml
 ├── requirements.txt
 └── .gitignore
-
+```
 
 ---
 
