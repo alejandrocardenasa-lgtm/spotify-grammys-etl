@@ -78,126 +78,89 @@ Two transformed outputs are created:
 
 Track-level merged dataset: joins Spotify tracks with Grammy information by artist
 Artist-level dataset: aggregates Spotify metrics and Grammy statistics by artist for dashboarding
-## 4. Dimensional Model
 
-The transformed data is organized using a **star schema**, designed to support analytical queries combining Spotify track metrics with Grammy award information.
+4. Dimensional Model
 
-### Grain
+The transformed data is organized using a star schema, designed to support analytical queries combining Spotify track metrics with Grammy award information.
+
+Grain
+
 The grain of the fact table is defined as:
 
-> **One row represents a Spotify track associated with a Grammy record for the same artist, category, and year (when available).**
+One row in the fact table represents a Spotify track associated with a Grammy record for the same artist, category, and year when available.
 
-This means:
-- A track can appear multiple times if the artist has multiple Grammy nominations or categories.
-- If no Grammy record exists, the track is still included with default values.
-- This design enables analysis at the intersection of **music performance (Spotify)** and **award recognition (Grammys)**.
+Dimensions
+1. dim_artist
 
----
-
-## Dimensions
-
-### 1. dim_artist
 Stores unique artist information.
 
-**Fields:**
-- `artist_id` (PK)
-- `artist_name`
+Fields:
 
----
+artist_id
+artist_name
+2. dim_track
 
-### 2. dim_track
-Stores Spotify track-level metadata.
+Stores Spotify track information.
 
-**Fields:**
-- `track_id` (PK)
-- `track_name`
-- `album_name`
-- `explicit`
+Fields:
 
----
+track_id
+track_name
+album_name
+explicit
+3. dim_genre
 
-### 3. dim_genre
-Stores genre classification for tracks.
+Stores music genre information.
 
-**Fields:**
-- `genre_id` (PK)
-- `track_genre`
+Fields:
 
----
+genre_id
+track_genre
+4. dim_award
 
-### 4. dim_award
-Stores Grammy award details.
+Stores Grammy award information.
 
-**Fields:**
-- `award_id` (PK)
-- `category`
-- `nominee`
-- `workers`
-- `winner`
+Fields:
 
-This dimension allows analysis of:
-- nominations vs winners
-- award categories
-- relationships between Spotify metrics and Grammy outcomes
+award_id
+category
+nominee
+workers
+winner
+5. dim_date
 
----
+Stores time-related information associated with Grammy records.
 
-### 5. dim_date
-Stores time-related attributes of Grammy records.
+Fields:
 
-**Fields:**
-- `date_id` (PK)
-- `award_year`
-- `published_at`
-- `updated_at`
+date_id
+award_year
+published_at
+updated_at
+Fact Table
+6. fact_music_awards
 
-This enables time-based analysis such as:
-- trends by year
-- evolution of awards over time
+Stores the analytical measures and foreign keys to the dimensions.
 
----
+Fields:
 
-## Fact Table
-
-### 6. fact_music_awards
-Central fact table containing Spotify metrics and foreign keys to all dimensions.
-
-**Fields:**
-- `fact_id` (PK)
-- `artist_id` (FK)
-- `track_id` (FK)
-- `genre_id` (FK)
-- `award_id` (FK)
-- `date_id` (FK)
-
-**Measures (Spotify features):**
-- `popularity`
-- `duration_ms`
-- `danceability`
-- `energy`
-- `loudness`
-- `speechiness`
-- `acousticness`
-- `instrumentalness`
-- `liveness`
-- `valence`
-- `tempo`
-
----
-
-## Design Rationale
-
-- A **star schema** was chosen to simplify analytical queries and improve performance.
-- Dimensions separate descriptive attributes from measurable metrics.
-- The fact table centralizes Spotify numerical features for analysis.
-- Grammy data is integrated through `dim_award` and `dim_date`, enabling cross-domain insights.
-- Surrogate keys (`*_id`) ensure consistency and efficient joins.
-
-This model supports queries such as:
-- Which genres have higher Grammy-winning tracks?
-- Do more popular songs tend to win awards?
-- How do audio features differ between winners and non-winners?
-- Trends of awards and music characteristics over time
+fact_id
+artist_id
+track_id
+genre_id
+award_id
+date_id
+popularity
+duration_ms
+danceability
+energy
+loudness
+speechiness
+acousticness
+instrumentalness
+liveness
+valence
+tempo
 5. Load
 
 The final load phase writes data into PostgreSQL:
@@ -232,11 +195,13 @@ DAG Flow
 The DAG first loads the Grammy CSV into a staging SQLite database. Then it extracts both Spotify and Grammy data, cleans them, transforms and merges them, builds the dimensional model, and finally loads the results into PostgreSQL. After loading, the pipeline removes temporary processed files.
 
 DAG Design Decisions
+
 Task modularity: each ETL phase is separated into a dedicated Airflow task for clarity and maintainability
 Intermediate CSV files: temporary files are stored in data/processed so that each stage can pass lightweight file paths through XCom instead of large datasets
 Parallel extraction: Spotify and Grammy extraction tasks run after the SQLite load step
 Cleanup step: temporary files are removed at the end to reduce storage usage
 Retry configuration: the DAG includes retries and retry delays to improve robustness
+
 Assumptions and Decisions Made During Transformations
 
 Several assumptions and transformation decisions were made to ensure the pipeline could run consistently and produce analytical outputs:
@@ -255,8 +220,6 @@ no_nominee
 no_workers
 no_date
 
-This decision avoids null-related issues during joins and dimensional modeling.
-
 3. Numeric coercion
 
 Spotify audio and popularity metrics are converted to numeric values, and any invalid or missing values are replaced with zero. This allows the fact table to store complete numeric measures for analysis.
@@ -272,8 +235,6 @@ The project creates:
 a track-level merged dataset, useful for detailed record-level analysis
 an artist-level aggregated dataset, better suited for dashboards and summary metrics
 
-This decision was necessary because joining awards to tracks by artist can create duplicated records at track level.
-
 6. Surrogate keys in dimensions
 
 Each dimension table uses generated surrogate keys such as artist_id, genre_id, award_id, and date_id. This supports a proper warehouse design and simplifies fact table relationships.
@@ -282,28 +243,7 @@ Each dimension table uses generated surrogate keys such as artist_id, genre_id, 
 
 The load process truncates dimensional tables and reloads them to prevent duplication when the DAG is executed multiple times.
 
-Dimensional Model
-
-The warehouse follows a star schema:
-
-dim_artist: artist reference data
-dim_track: track, album, and explicit flag
-dim_genre: Spotify genre categories
-dim_award: Grammy award category, nominee, workers, and winner flag
-dim_date: award year and Grammy timestamps
-fact_music_awards: central fact table with Spotify metrics and dimensional foreign keys
-
-This structure supports analytical queries such as:
-
-popularity by award category
-genre trends across awarded artists
-yearly Grammy activity
-artist performance in Spotify vs Grammy recognition
-
-
-
 Setup Instructions
-
 1. Clone the repository
 git clone https://github.com/alejandrocardenasa-lgtm/spotify-grammys-etl.git
 cd spotify-grammys-etl
@@ -316,11 +256,13 @@ docker compose up -d
 Open Airflow in your browser and trigger the DAG:
 
 DAG name: spotify_grammys_etl
+
 5. Explore the results
 
 After the pipeline runs successfully, the warehouse tables will be available in PostgreSQL and the generated outputs can be used in Metabase or another BI tool for dashboards.
 
 Technologies Used
+
 Python
 Apache Airflow
 Pandas
@@ -331,6 +273,7 @@ Docker
 Google Drive API
 Jupyter Notebooks
 Metabase
+
 Visualizations
 
 The repository includes a visualizations/ folder with dashboard screenshots and charts created from the final analytical outputs. These visualizations summarize relationships between Spotify metrics, genres, artists, and Grammy recognition.
@@ -343,16 +286,20 @@ artists with the most songs
 happiest music genres
 most popular genres
 top artists by nominations
+
 Key Decisions
+
 Airflow was used to orchestrate the pipeline because it clearly separates ETL stages and supports reproducible workflows.
 SQLite was used as a staging layer for Grammy data before warehouse loading.
 PostgreSQL was used as the final warehouse for dimensional and analytical tables.
 The project stores both detailed and aggregated outputs to support different reporting needs.
 A cleanup task was added to remove temporary files generated during execution.
 Sensitive credential files were excluded from version control for security.
+
 Security Note
 
 Google Drive upload functionality is optional. Credential files and tokens are intentionally excluded from the repository for security reasons.
 
 Author
+
 Gonoalejo
